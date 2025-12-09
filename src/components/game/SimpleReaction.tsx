@@ -19,6 +19,14 @@ export const SimpleReaction: React.FC<GameProps> = ({ onFinish, onUpdateStats })
     feedbackTimer: null as ReturnType<typeof setTimeout> | null,
   })
 
+  const onFinishRef = useRef(onFinish)
+  const onUpdateStatsRef = useRef(onUpdateStats)
+
+  useEffect(() => {
+    onFinishRef.current = onFinish
+    onUpdateStatsRef.current = onUpdateStats
+  })
+
   useEffect(() => {
     const next = () => {
       const state = stateRef.current
@@ -37,7 +45,7 @@ export const SimpleReaction: React.FC<GameProps> = ({ onFinish, onUpdateStats })
           state.rts.length > 0 ? state.rts.reduce((a, b) => a + b, 0) / state.rts.length : 0
         const correctTrials = state.trials.filter((t) => t.correct).length
         const accuracy = state.trials.length > 0 ? (correctTrials / state.trials.length) * 100 : 0
-        onFinish({ avg, accuracy, trials: state.trials })
+        onFinishRef.current({ avg, accuracy, trials: state.trials })
         return
       }
 
@@ -82,7 +90,7 @@ export const SimpleReaction: React.FC<GameProps> = ({ onFinish, onUpdateStats })
 
           // 延迟调用 onUpdateStats 和 next
           state.feedbackTimer = setTimeout(() => {
-            onUpdateStats(state.count, state.trials.filter((t) => t.correct).length)
+            onUpdateStatsRef.current(state.count, state.trials.filter((t) => t.correct).length)
             next()
           }, 1000)
 
@@ -125,7 +133,7 @@ export const SimpleReaction: React.FC<GameProps> = ({ onFinish, onUpdateStats })
       if (state.waitTimer) clearTimeout(state.waitTimer)
       if (state.feedbackTimer) clearTimeout(state.feedbackTimer)
     }
-  }, [onFinish, onUpdateStats])
+  }, [])
 
   return (
     <div className='game-frame' id='game-canvas' style={{ background: bgColor, color: 'white' }}>

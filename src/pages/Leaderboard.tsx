@@ -1,50 +1,34 @@
 import React, { useEffect, useState } from 'react';
-import { getGlobalLeaderboard, getTestTypeLeaderboard, getUserStatistics, getTestTypes } from '../services/testService';
-import type { LeaderboardEntry, UserStatistics, TestType } from '../types/testTypes';
-
-type TabType = 'global' | 'byTest' | 'personal';
+import { getGlobalStatistics, getLeaderboard, getTestTypes, getTestTypeStatistics } from '../services/testService';
+import type { GlobalStatistics, LeaderboardResponse, TestType, TestTypeStatistics } from '../types/testTypes';
 
 const Leaderboard: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<TabType>('global');
-    const [globalLeaderboard, setGlobalLeaderboard] = useState<LeaderboardEntry[]>([]);
-    const [testTypeLeaderboard, setTestTypeLeaderboard] = useState<LeaderboardEntry[]>([]);
-    const [userStats, setUserStats] = useState<UserStatistics | null>(null);
+    const [globalStats, setGlobalStats] = useState<GlobalStatistics | null>(null);
+    const [leaderboard, setLeaderboard] = useState<LeaderboardResponse | null>(null);
     const [testTypes, setTestTypes] = useState<TestType[]>([]);
     const [selectedTestType, setSelectedTestType] = useState<string>('');
+    const [testTypeStats, setTestTypeStats] = useState<TestTypeStatistics | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Fetch test types on mount
+    // Fetch initial data on mount
     useEffect(() => {
-        const fetchTestTypes = async () => {
-            try {
-                const types = await getTestTypes();
-                setTestTypes(types);
-                if (types.length > 0) {
-                    setSelectedTestType(types[0].type);
-                }
-            } catch (err) {
-                console.error('Failed to load test types:', err);
-            }
-        };
-        fetchTestTypes();
-    }, []);
-
-    // Fetch data based on active tab
-    useEffect(() => {
-        const fetchData = async () => {
+        const fetchInitialData = async () => {
             setLoading(true);
             setError(null);
             try {
-                if (activeTab === 'global') {
-                    const data = await getGlobalLeaderboard(100);
-                    setGlobalLeaderboard(data);
-                } else if (activeTab === 'byTest' && selectedTestType) {
-                    const data = await getTestTypeLeaderboard(selectedTestType, 100);
-                    setTestTypeLeaderboard(data);
-                } else if (activeTab === 'personal') {
-                    const data = await getUserStatistics();
-                    setUserStats(data);
+                const [statsData, leaderboardData, typesData] = await Promise.all([
+                    getGlobalStatistics(),
+                    getLeaderboard(100),
+                    getTestTypes()
+                ]);
+                setGlobalStats(statsData);
+                setLeaderboard(leaderboardData);
+                setTestTypes(typesData);
+
+                // Select first test type by default
+                if (typesData.length > 0) {
+                    setSelectedTestType(typesData[0].type);
                 }
             } catch (err: any) {
                 setError(err.message || 'Failed to load data');
@@ -53,8 +37,24 @@ const Leaderboard: React.FC = () => {
             }
         };
 
-        fetchData();
-    }, [activeTab, selectedTestType]);
+        fetchInitialData();
+    }, []);
+
+    // Fetch test type statistics when selection changes
+    useEffect(() => {
+        const fetchTestTypeStats = async () => {
+            if (!selectedTestType) return;
+
+            try {
+                const stats = await getTestTypeStatistics(selectedTestType);
+                setTestTypeStats(stats);
+            } catch (err: any) {
+                console.error('Failed to fetch test type statistics:', err);
+            }
+        };
+
+        fetchTestTypeStats();
+    }, [selectedTestType]);
 
     const getRankColor = (rank: number) => {
         if (rank === 1) return 'var(--duo-yellow)';
@@ -70,355 +70,327 @@ const Leaderboard: React.FC = () => {
         return `#${rank}`;
     };
 
-    return (
-        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '20px' }}>
-            <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-                <div style={{ fontSize: '60px', marginBottom: '10px' }}>🏆</div>
-                <h1>Leaderboard</h1>
-                <p style={{ color: '#999' }}>See how you rank against other players</p>
-            </div>
-
-            {/* Tab Navigation */}
-            <div style={{
-                display: 'flex',
-                gap: '10px',
-                marginBottom: '30px',
-                borderBottom: '2px solid #e5e5e5',
-                justifyContent: 'center'
-            }}>
-                <button
-                    onClick={() => setActiveTab('global')}
-                    style={{
-                        padding: '12px 24px',
-                        background: 'none',
-                        border: 'none',
-                        borderBottom: activeTab === 'global' ? '3px solid var(--duo-green)' : '3px solid transparent',
-                        color: activeTab === 'global' ? 'var(--duo-green)' : '#999',
-                        fontWeight: activeTab === 'global' ? '800' : '600',
-                        fontSize: '16px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                    }}
-                >
-                    🌍 Global Rankings
-                </button>
-                <button
-                    onClick={() => setActiveTab('byTest')}
-                    style={{
-                        padding: '12px 24px',
-                        background: 'none',
-                        border: 'none',
-                        borderBottom: activeTab === 'byTest' ? '3px solid var(--duo-green)' : '3px solid transparent',
-                        color: activeTab === 'byTest' ? 'var(--duo-green)' : '#999',
-                        fontWeight: activeTab === 'byTest' ? '800' : '600',
-                        fontSize: '16px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                    }}
-                >
-                    🎯 By Test Type
-                </button>
-                <button
-                    onClick={() => setActiveTab('personal')}
-                    style={{
-                        padding: '12px 24px',
-                        background: 'none',
-                        border: 'none',
-                        borderBottom: activeTab === 'personal' ? '3px solid var(--duo-green)' : '3px solid transparent',
-                        color: activeTab === 'personal' ? 'var(--duo-green)' : '#999',
-                        fontWeight: activeTab === 'personal' ? '800' : '600',
-                        fontSize: '16px',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                    }}
-                >
-                    📊 My Statistics
-                </button>
-            </div>
-
-            {/* Test Type Selector (for byTest tab) */}
-            {activeTab === 'byTest' && testTypes.length > 0 && (
-                <div style={{ marginBottom: '20px', textAlign: 'center' }}>
-                    <select
-                        value={selectedTestType}
-                        onChange={(e) => setSelectedTestType(e.target.value)}
-                        style={{
-                            padding: '10px 20px',
-                            fontSize: '16px',
-                            borderRadius: '12px',
-                            border: '2px solid #e5e5e5',
-                            background: 'white',
-                            cursor: 'pointer'
-                        }}
-                    >
-                        {testTypes.map((type) => (
-                            <option key={type.type} value={type.type}>
-                                {type.name}
-                            </option>
-                        ))}
-                    </select>
+    if (loading) {
+        return (
+            <div id="view-leaderboard">
+                <div style={{ textAlign: 'center', padding: '40px' }}>
+                    <div style={{ fontSize: '60px', marginBottom: '10px' }}>⏳</div>
+                    <h1>Loading...</h1>
                 </div>
-            )}
+            </div>
+        );
+    }
 
-            {/* Loading State */}
-            {loading && (
-                <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
-                    <div style={{ fontSize: '40px', marginBottom: '10px' }}>⏳</div>
-                    <p>Loading...</p>
-                </div>
-            )}
-
-            {/* Error State */}
-            {error && (
-                <div style={{
-                    textAlign: 'center',
-                    padding: '40px',
-                    background: '#fff0f0',
-                    borderRadius: '16px'
-                }}>
-                    <div style={{ fontSize: '40px', marginBottom: '10px' }}>⚠️</div>
+    if (error) {
+        return (
+            <div id="view-leaderboard">
+                <div style={{ textAlign: 'center', padding: '40px', background: '#fff0f0', borderRadius: '16px' }}>
+                    <div style={{ fontSize: '60px', marginBottom: '10px' }}>⚠️</div>
+                    <h1>Loading Failed</h1>
                     <p style={{ color: '#d00' }}>{error}</p>
                 </div>
-            )}
+            </div>
+        );
+    }
 
-            {/* Global Leaderboard */}
-            {!loading && !error && activeTab === 'global' && (
-                <div>
-                    {globalLeaderboard.length === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
-                            <p>No data available yet</p>
-                        </div>
-                    ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            {globalLeaderboard.map((entry) => (
-                                <div
-                                    key={entry.userId}
-                                    className="test-card"
-                                    style={{
-                                        cursor: 'default',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '20px',
-                                        padding: '20px'
-                                    }}
-                                >
-                                    <div
-                                        style={{
-                                            fontSize: '32px',
-                                            fontWeight: '800',
-                                            color: getRankColor(entry.rank),
-                                            minWidth: '60px',
-                                            textAlign: 'center'
-                                        }}
-                                    >
-                                        {getRankIcon(entry.rank)}
-                                    </div>
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ fontWeight: '700', fontSize: '18px', marginBottom: '4px' }}>
-                                            {entry.username}
-                                        </div>
-                                        <div style={{ color: '#999', fontSize: '14px' }}>
-                                            {entry.totalTests} tests completed
-                                        </div>
-                                    </div>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>
-                                            Avg Reaction
-                                        </div>
-                                        <div style={{ fontSize: '20px', fontWeight: '800', color: 'var(--duo-blue)' }}>
-                                            {entry.avgReactionTime.toFixed(0)}ms
-                                        </div>
-                                    </div>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>
-                                            Accuracy
-                                        </div>
-                                        <div style={{ fontSize: '20px', fontWeight: '800', color: 'var(--duo-green)' }}>
-                                            {(entry.accuracyRate * 100).toFixed(0)}%
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            )}
+    return (
+        <div id="view-leaderboard">
+            {/* Page Title */}
+            <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+                <div style={{ fontSize: '48px', marginBottom: '8px' }}>🏆</div>
+                <h1 style={{ margin: 0, marginBottom: '8px' }}>Leaderboard</h1>
+                <p style={{ color: '#999', margin: 0 }}>View your ranking compared to other users</p>
+            </div>
 
-            {/* Test Type Leaderboard */}
-            {!loading && !error && activeTab === 'byTest' && (
-                <div>
-                    {testTypeLeaderboard.length === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '40px', color: '#999' }}>
-                            <p>No data available for this test type yet</p>
-                        </div>
-                    ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            {testTypeLeaderboard.map((entry) => (
-                                <div
-                                    key={entry.userId}
-                                    className="test-card"
-                                    style={{
-                                        cursor: 'default',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '20px',
-                                        padding: '20px'
-                                    }}
-                                >
-                                    <div
-                                        style={{
-                                            fontSize: '32px',
-                                            fontWeight: '800',
-                                            color: getRankColor(entry.rank),
-                                            minWidth: '60px',
-                                            textAlign: 'center'
-                                        }}
-                                    >
-                                        {getRankIcon(entry.rank)}
-                                    </div>
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ fontWeight: '700', fontSize: '18px', marginBottom: '4px' }}>
-                                            {entry.username}
-                                        </div>
-                                        <div style={{ color: '#999', fontSize: '14px' }}>
-                                            Score: {entry.score.toFixed(0)}
-                                        </div>
-                                    </div>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>
-                                            Avg Reaction
-                                        </div>
-                                        <div style={{ fontSize: '20px', fontWeight: '800', color: 'var(--duo-blue)' }}>
-                                            {entry.avgReactionTime.toFixed(0)}ms
-                                        </div>
-                                    </div>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>
-                                            Accuracy
-                                        </div>
-                                        <div style={{ fontSize: '20px', fontWeight: '800', color: 'var(--duo-green)' }}>
-                                            {(entry.accuracyRate * 100).toFixed(0)}%
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* Personal Statistics */}
-            {!loading && !error && activeTab === 'personal' && userStats && (
-                <div>
-                    {/* Overall Stats */}
-                    <div className="test-card" style={{
-                        cursor: 'default',
-                        marginBottom: '20px',
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(3, 1fr)',
-                        gap: '20px',
-                        textAlign: 'center'
-                    }}>
-                        <div>
-                            <div style={{ fontSize: '12px', color: '#999', marginBottom: '8px' }}>
-                                Total Tests
-                            </div>
-                            <div style={{ fontSize: '32px', fontWeight: '800', color: 'var(--text-color)' }}>
-                                {userStats.totalTestsCompleted}
-                            </div>
-                        </div>
-                        <div>
-                            <div style={{ fontSize: '12px', color: '#999', marginBottom: '8px' }}>
-                                Avg Accuracy
-                            </div>
-                            <div style={{ fontSize: '32px', fontWeight: '800', color: 'var(--duo-green)' }}>
-                                {(userStats.averageAccuracy * 100).toFixed(0)}%
-                            </div>
-                        </div>
-                        <div>
-                            <div style={{ fontSize: '12px', color: '#999', marginBottom: '8px' }}>
-                                Avg Reaction
-                            </div>
-                            <div style={{ fontSize: '32px', fontWeight: '800', color: 'var(--duo-blue)' }}>
-                                {userStats.averageReactionTime.toFixed(0)}ms
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Best Performance */}
-                    {userStats.bestPerformance && (
+            {globalStats && (
+                <>
+                    {/* Global Statistics Cards */}
+                    <h3 style={{ marginBottom: '20px' }}>Platform Statistics</h3>
+                    <div className="test-grid" style={{ marginBottom: '40px' }}>
                         <div className="test-card" style={{
                             cursor: 'default',
-                            marginBottom: '20px',
-                            textAlign: 'center'
-                        }}>
-                            <div style={{ fontSize: '40px', marginBottom: '10px' }}>🌟</div>
-                            <h3 style={{ marginBottom: '8px' }}>Best Performance</h3>
-                            <div style={{ fontSize: '18px', color: '#666', marginBottom: '8px' }}>
-                                {userStats.bestPerformance.testName}
-                            </div>
-                            <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--duo-yellow)' }}>
-                                Top {(100 - userStats.bestPerformance.percentile).toFixed(1)}%
-                            </div>
+                            textAlign: 'center',
+                            background: 'white',
+                            borderColor: 'var(--duo-blue)',
+                            top: 0
+                        }} onMouseEnter={(e) => e.currentTarget.style.top = '0'}>
+                            <div style={{ fontSize: '40px', marginBottom: '10px' }}>👥</div>
+                            <h3 style={{ margin: 0, marginBottom: '8px', color: 'var(--duo-blue)' }}>
+                                {globalStats.totalUsers.toLocaleString()}
+                            </h3>
+                            <p style={{ margin: 0, color: '#666', fontSize: '14px', fontWeight: '600' }}>Total Users</p>
                         </div>
-                    )}
 
-                    {/* Test Type Stats */}
-                    <h3 style={{ marginBottom: '16px' }}>Performance by Test Type</h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        {userStats.testTypeStats.map((stat) => (
-                            <div
-                                key={stat.testType}
-                                className="test-card"
+                        <div className="test-card" style={{
+                            cursor: 'default',
+                            textAlign: 'center',
+                            background: 'white',
+                            borderColor: 'var(--duo-green)',
+                            top: 0
+                        }} onMouseEnter={(e) => e.currentTarget.style.top = '0'}>
+                            <div style={{ fontSize: '40px', marginBottom: '10px' }}>📊</div>
+                            <h3 style={{ margin: 0, marginBottom: '8px', color: 'var(--duo-green)' }}>
+                                {globalStats.totalTests.toLocaleString()}
+                            </h3>
+                            <p style={{ margin: 0, color: '#666', fontSize: '14px', fontWeight: '600' }}>Total Tests</p>
+                        </div>
+
+                        <div className="test-card" style={{
+                            cursor: 'default',
+                            textAlign: 'center',
+                            background: 'white',
+                            borderColor: 'var(--duo-yellow)',
+                            top: 0
+                        }} onMouseEnter={(e) => e.currentTarget.style.top = '0'}>
+                            <div style={{ fontSize: '40px', marginBottom: '10px' }}>🔥</div>
+                            <h3 style={{ margin: 0, marginBottom: '8px', color: 'var(--duo-yellow)' }}>
+                                {globalStats.totalTestsToday.toLocaleString()}
+                            </h3>
+                            <p style={{ margin: 0, color: '#666', fontSize: '14px', fontWeight: '600' }}>Today's Tests</p>
+                        </div>
+                    </div>
+                </>
+            )}
+
+            {/* Two Column Layout */}
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(450px, 1fr))',
+                gap: '30px'
+            }}>
+                {/* Left: Leaderboard Rankings */}
+                {leaderboard && (
+                    <div>
+                        <h3 style={{ marginBottom: '20px' }}>🌟 Leaderboard</h3>
+
+                        {/* Current User Rank */}
+                        {leaderboard.currentUser && (
+                            <div className="test-card" style={{
+                                cursor: 'default',
+                                marginBottom: '20px',
+                                padding: '20px',
+                                textAlign: 'center',
+                                background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+                                color: 'white',
+                                borderColor: '#fa709a',
+                                top: 0
+                            }} onMouseEnter={(e) => e.currentTarget.style.top = '0'}>
+                                <div style={{ fontSize: '36px', marginBottom: '8px' }}>🎯</div>
+                                <div style={{ fontSize: '14px', opacity: 0.9, marginBottom: '4px' }}>Your Rank</div>
+                                <div style={{ fontSize: '32px', fontWeight: '900', marginBottom: '4px' }}>
+                                    #{leaderboard.currentUser.rank}
+                                </div>
+                                <div style={{ fontSize: '14px', opacity: 0.9 }}>
+                                    {leaderboard.currentUser.testCount} tests
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Rankings List */}
+                        <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '10px',
+                            maxHeight: '800px',
+                            overflowY: 'auto',
+                            paddingRight: '10px'
+                        }}>
+                            {leaderboard.rankings.map((entry) => (
+                                <div
+                                    key={entry.rank}
+                                    className="test-card"
+                                    style={{
+                                        cursor: 'default',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '16px',
+                                        padding: '16px',
+                                        background: entry.rank <= 3
+                                            ? `linear-gradient(135deg, ${getRankColor(entry.rank)}15 0%, ${getRankColor(entry.rank)}05 100%)`
+                                            : 'white',
+                                        top: 0
+                                    }}
+                                    onMouseEnter={(e) => e.currentTarget.style.top = '0'}
+                                >
+                                    <div
+                                        style={{
+                                            fontSize: entry.rank <= 3 ? '36px' : '18px',
+                                            fontWeight: '900',
+                                            color: getRankColor(entry.rank),
+                                            minWidth: entry.rank <= 3 ? '70px' : '50px',
+                                            textAlign: 'center'
+                                        }}
+                                    >
+                                        {getRankIcon(entry.rank)}
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontWeight: '800', fontSize: '16px', marginBottom: '2px' }}>
+                                            {entry.username}
+                                        </div>
+                                        <div style={{ color: '#999', fontSize: '13px', fontWeight: '600' }}>
+                                            {entry.testCount} tests
+                                        </div>
+                                    </div>
+                                    {entry.avgReactionTime !== null && (
+                                        <div style={{ textAlign: 'right' }}>
+                                            <div style={{ fontSize: '11px', color: '#999', marginBottom: '2px', fontWeight: '600' }}>
+                                                Reaction
+                                            </div>
+                                            <div style={{ fontSize: '16px', fontWeight: '800', color: 'var(--duo-blue)' }}>
+                                                {entry.avgReactionTime.toFixed(0)}ms
+                                            </div>
+                                        </div>
+                                    )}
+                                    {entry.avgAccuracy !== null && (
+                                        <div style={{ textAlign: 'right' }}>
+                                            <div style={{ fontSize: '11px', color: '#999', marginBottom: '2px', fontWeight: '600' }}>
+                                                Accuracy
+                                            </div>
+                                            <div style={{ fontSize: '16px', fontWeight: '800', color: 'var(--duo-green)' }}>
+                                                {(entry.avgAccuracy * 100).toFixed(0)}%
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Right: Test Type Statistics */}
+                <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                        <h3 style={{ margin: 0 }}>📊 Test Type Statistics</h3>
+                        {testTypes.length > 0 && (
+                            <select
+                                value={selectedTestType}
+                                onChange={(e) => setSelectedTestType(e.target.value)}
                                 style={{
-                                    cursor: 'default',
-                                    padding: '20px'
+                                    padding: '8px 16px',
+                                    fontSize: '14px',
+                                    fontWeight: '700',
+                                    borderRadius: '12px',
+                                    border: '2px solid var(--gray-border)',
+                                    background: 'white',
+                                    cursor: 'pointer',
+                                    fontFamily: 'Nunito, sans-serif'
                                 }}
                             >
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                                    <div>
-                                        <h4 style={{ margin: 0, marginBottom: '4px' }}>{stat.testName}</h4>
-                                        <div style={{ color: '#999', fontSize: '14px' }}>
-                                            {stat.testsCompleted} tests completed
-                                        </div>
-                                    </div>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <div style={{ fontSize: '20px', fontWeight: '800', color: 'var(--duo-yellow)' }}>
-                                            Top {(100 - stat.percentile).toFixed(1)}%
-                                        </div>
+                                {testTypes.map((type) => (
+                                    <option key={type.type} value={type.type}>
+                                        {type.name}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
+                    </div>
+
+                    {testTypeStats && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            {/* Overview Stats */}
+                            <div className="test-card" style={{
+                                cursor: 'default',
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(3, 1fr)',
+                                gap: '16px',
+                                textAlign: 'center',
+                                padding: '20px',
+                                top: 0
+                            }} onMouseEnter={(e) => e.currentTarget.style.top = '0'}>
+                                <div>
+                                    <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px', fontWeight: '600' }}>Total Tests</div>
+                                    <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--text-color)' }}>
+                                        {testTypeStats.totalTests.toLocaleString()}
                                     </div>
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', textAlign: 'center' }}>
-                                    <div>
-                                        <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>
-                                            Best Score
-                                        </div>
-                                        <div style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-color)' }}>
-                                            {stat.bestScore.toFixed(0)}
-                                        </div>
+                                <div>
+                                    <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px', fontWeight: '600' }}>Avg Reaction Time</div>
+                                    <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--duo-blue)' }}>
+                                        {testTypeStats.avgReactionTime != null ? testTypeStats.avgReactionTime.toFixed(0) : '-'}ms
                                     </div>
-                                    <div>
-                                        <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>
-                                            Avg Accuracy
-                                        </div>
-                                        <div style={{ fontSize: '18px', fontWeight: '800', color: 'var(--duo-green)' }}>
-                                            {(stat.averageAccuracy * 100).toFixed(0)}%
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>
-                                            Avg Reaction
-                                        </div>
-                                        <div style={{ fontSize: '18px', fontWeight: '800', color: 'var(--duo-blue)' }}>
-                                            {stat.averageReactionTime.toFixed(0)}ms
-                                        </div>
+                                </div>
+                                <div>
+                                    <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px', fontWeight: '600' }}>Avg Accuracy</div>
+                                    <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--duo-green)' }}>
+                                        {testTypeStats.avgAccuracy != null ? (testTypeStats.avgAccuracy * 100).toFixed(0) : '-'}%
                                     </div>
                                 </div>
                             </div>
-                        ))}
-                    </div>
+
+                            {/* Reaction Time Range */}
+                            <div className="test-card" style={{ cursor: 'default', padding: '20px', top: 0 }} onMouseEnter={(e) => e.currentTarget.style.top = '0'}>
+                                <h4 style={{ margin: 0, marginBottom: '12px', fontSize: '16px' }}>⚡ Reaction Time Range</h4>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                                    <span style={{ fontSize: '14px', color: '#666', fontWeight: '600' }}>Fastest</span>
+                                    <span style={{ fontSize: '16px', fontWeight: '800', color: 'var(--duo-green)' }}>
+                                        {testTypeStats.minReactionTime != null ? testTypeStats.minReactionTime.toFixed(0) : '-'}ms
+                                    </span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span style={{ fontSize: '14px', color: '#666', fontWeight: '600' }}>Slowest</span>
+                                    <span style={{ fontSize: '16px', fontWeight: '800', color: 'var(--duo-red)' }}>
+                                        {testTypeStats.maxReactionTime != null ? testTypeStats.maxReactionTime.toFixed(0) : '-'}ms
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Reaction Time Distribution */}
+                            {testTypeStats.reactionTimeDistribution && testTypeStats.reactionTimeDistribution.length > 0 && (
+                                <div className="test-card" style={{ cursor: 'default', padding: '20px', top: 0 }} onMouseEnter={(e) => e.currentTarget.style.top = '0'}>
+                                    <h4 style={{ margin: 0, marginBottom: '12px', fontSize: '16px' }}>📈 Reaction Time Distribution</h4>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        {testTypeStats.reactionTimeDistribution.map((bucket, index) => (
+                                            <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                <div style={{ fontSize: '13px', fontWeight: '700', minWidth: '90px', color: '#666' }}>
+                                                    {bucket.range}
+                                                </div>
+                                                <div style={{ flex: 1, height: '24px', background: '#f0f0f0', borderRadius: '12px', overflow: 'hidden' }}>
+                                                    <div style={{
+                                                        height: '100%',
+                                                        width: `${bucket.percentage}%`,
+                                                        background: 'var(--duo-blue)',
+                                                        transition: 'width 0.3s'
+                                                    }} />
+                                                </div>
+                                                <div style={{ fontSize: '13px', fontWeight: '800', minWidth: '60px', textAlign: 'right', color: 'var(--duo-blue)' }}>
+                                                    {bucket.percentage.toFixed(1)}%
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Accuracy Distribution */}
+                            {testTypeStats.accuracyDistribution && testTypeStats.accuracyDistribution.length > 0 && (
+                                <div className="test-card" style={{ cursor: 'default', padding: '20px', top: 0 }} onMouseEnter={(e) => e.currentTarget.style.top = '0'}>
+                                    <h4 style={{ margin: 0, marginBottom: '12px', fontSize: '16px' }}>🎯 Accuracy Distribution</h4>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        {testTypeStats.accuracyDistribution.map((bucket, index) => (
+                                            <div key={index} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                <div style={{ fontSize: '13px', fontWeight: '700', minWidth: '90px', color: '#666' }}>
+                                                    {bucket.range}
+                                                </div>
+                                                <div style={{ flex: 1, height: '24px', background: '#f0f0f0', borderRadius: '12px', overflow: 'hidden' }}>
+                                                    <div style={{
+                                                        height: '100%',
+                                                        width: `${bucket.percentage}%`,
+                                                        background: 'var(--duo-green)',
+                                                        transition: 'width 0.3s'
+                                                    }} />
+                                                </div>
+                                                <div style={{ fontSize: '13px', fontWeight: '800', minWidth: '60px', textAlign: 'right', color: 'var(--duo-green)' }}>
+                                                    {bucket.percentage.toFixed(1)}%
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
-            )}
+            </div>
         </div>
     );
 };

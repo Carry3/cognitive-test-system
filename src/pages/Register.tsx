@@ -27,38 +27,38 @@ const Register: React.FC = () => {
       return;
     }
 
-    // 验证邮箱格式
+    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
       setError('Please enter a valid email address');
       return;
     }
 
-    // 密码复杂度验证
+    // Password complexity validation
     if (password.length < 8) {
       setError('Password must be at least 8 characters');
       return;
     }
 
-    // 检查是否包含大写字母
+    // Check for uppercase letters
     if (!/[A-Z]/.test(password)) {
       setError('Password must contain at least one uppercase letter');
       return;
     }
 
-    // 检查是否包含小写字母
+    // Check for lowercase letters
     if (!/[a-z]/.test(password)) {
       setError('Password must contain at least one lowercase letter');
       return;
     }
 
-    // 检查是否包含数字
+    // Check for numbers
     if (!/[0-9]/.test(password)) {
       setError('Password must contain at least one number');
       return;
     }
 
-    // 检查是否包含特殊字符
+    // Check for special characters
     if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
       setError('Password must contain at least one special character (!@#$%^&*(),.?":{}|<>)');
       return;

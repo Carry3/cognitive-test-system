@@ -11,8 +11,16 @@ const Profile: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedType, setSelectedType] = useState<string>('');
 
-  const handleViewResult = (testId: number) => {
-    navigate(`/results/${testId}`);
+  const handleTestClick = (test: TestHistory) => {
+    // If test is in progress, navigate to test page to resume
+    // Pass the existing testId so it doesn't create a new test
+    if (test.status === 'IN_PROGRESS') {
+      navigate(`/test/${test.testType}`, {
+        state: { existingTestId: test.testId }
+      });
+    } else {
+      navigate(`/results/${test.testId}`);
+    }
   };
 
   useEffect(() => {
@@ -128,7 +136,7 @@ const Profile: React.FC = () => {
               key={test.testId}
               className="test-card"
               style={{ cursor: 'pointer', transition: 'transform 0.1s' }}
-              onClick={() => handleViewResult(test.testId)}
+              onClick={() => handleTestClick(test)}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
                 <div>
@@ -161,13 +169,13 @@ const Profile: React.FC = () => {
                 <div>
                   <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>Accuracy</div>
                   <div style={{ fontSize: '20px', fontWeight: '800', color: 'var(--duo-blue)' }}>
-                    {(test.accuracyRate * 100).toFixed(0)}%
+                    {test.accuracyRate != null ? (test.accuracyRate * 100).toFixed(0) : '-'}%
                   </div>
                 </div>
                 <div>
                   <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>Avg Time</div>
                   <div style={{ fontSize: '20px', fontWeight: '800', color: 'var(--duo-green)' }}>
-                    {test.avgReactionTime.toFixed(0)}ms
+                    {test.avgReactionTime != null ? test.avgReactionTime.toFixed(0) : '-'}ms
                   </div>
                 </div>
                 <div>
@@ -179,7 +187,7 @@ const Profile: React.FC = () => {
                 <div>
                   <div style={{ fontSize: '12px', color: '#999', marginBottom: '4px' }}>Rank</div>
                   <div style={{ fontSize: '20px', fontWeight: '800', color: 'var(--duo-yellow)' }}>
-                    Top {(100 - test.percentileRank).toFixed(0)}%
+                    {test.percentileRank != null ? `Top ${(100 - test.percentileRank).toFixed(0)}%` : '-'}
                   </div>
                 </div>
               </div>

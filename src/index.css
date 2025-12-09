@@ -143,6 +143,13 @@ body.game-mode #view-game {
   color: #afafaf;
   border: 2px solid #e5e5e5;
   box-shadow: none;
+  transition: all 0.2s;
+}
+
+.btn-outline:hover {
+  color: #666;
+  border-color: #999;
+  background: rgba(0, 0, 0, 0.02);
 }
 
 /* Modals */

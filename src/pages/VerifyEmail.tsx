@@ -6,10 +6,10 @@ const VerifyEmail: React.FC = () => {
     const [searchParams] = useSearchParams();
     const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
     const [message, setMessage] = useState('');
-    const hasVerified = useRef(false); // 防止重复调用
+    const hasVerified = useRef(false); // Prevent duplicate calls
 
     useEffect(() => {
-        // 如果已经验证过，不再执行
+        // If already verified, don't execute again
         if (hasVerified.current) {
             return;
         }
@@ -18,14 +18,14 @@ const VerifyEmail: React.FC = () => {
 
         if (!token) {
             setStatus('error');
-            setMessage('验证令牌缺失');
+            setMessage('Verification token missing');
             hasVerified.current = true;
             return;
         }
 
-        // 调用验证API
+        // Call verification API
         const verify = async () => {
-            hasVerified.current = true; // 标记为已验证，防止重复调用
+            hasVerified.current = true; // Mark as verified to prevent duplicate calls
             const result = await verifyEmail(token);
             if (result.success) {
                 setStatus('success');
@@ -63,15 +63,15 @@ const VerifyEmail: React.FC = () => {
                 {status === 'loading' && (
                     <>
                         <div style={{ fontSize: '48px', marginBottom: '20px' }}>⏳</div>
-                        <h2 style={{ marginBottom: '15px' }}>正在验证邮箱...</h2>
-                        <p style={{ color: '#666' }}>请稍候</p>
+                        <h2 style={{ marginBottom: '15px' }}>Verifying email...</h2>
+                        <p style={{ color: '#666' }}>Please wait</p>
                     </>
                 )}
 
                 {status === 'success' && (
                     <>
                         <div style={{ fontSize: '48px', marginBottom: '20px' }}>✅</div>
-                        <h2 style={{ marginBottom: '15px', color: '#28A745' }}>验证成功!</h2>
+                        <h2 style={{ marginBottom: '15px', color: '#28A745' }}>Verification successful!</h2>
                         <p style={{ marginBottom: '30px', color: '#666', lineHeight: '1.6' }}>
                             {message}
                         </p>
@@ -80,7 +80,7 @@ const VerifyEmail: React.FC = () => {
                                 className='btn btn-primary'
                                 style={{ width: '100%', padding: '12px', fontSize: '16px' }}
                             >
-                                前往登录
+                                Go to Login
                             </button>
                         </Link>
                     </>
@@ -89,7 +89,7 @@ const VerifyEmail: React.FC = () => {
                 {status === 'error' && (
                     <>
                         <div style={{ fontSize: '48px', marginBottom: '20px' }}>❌</div>
-                        <h2 style={{ marginBottom: '15px', color: '#FF4B4B' }}>验证失败</h2>
+                        <h2 style={{ marginBottom: '15px', color: '#FF4B4B' }}>Verification failed</h2>
                         <p style={{ marginBottom: '30px', color: '#666', lineHeight: '1.6' }}>
                             {message}
                         </p>
@@ -99,7 +99,7 @@ const VerifyEmail: React.FC = () => {
                                     className='btn btn-primary'
                                     style={{ width: '100%', padding: '12px', fontSize: '16px' }}
                                 >
-                                    返回登录
+                                    Back to Login
                                 </button>
                             </Link>
                             <Link to="/register">
@@ -114,7 +114,7 @@ const VerifyEmail: React.FC = () => {
                                         border: '2px solid #e5e5e5'
                                     }}
                                 >
-                                    重新注册
+                                    Register Again
                                 </button>
                             </Link>
                         </div>
@@ -124,7 +124,7 @@ const VerifyEmail: React.FC = () => {
                 <div style={{ marginTop: '30px', fontSize: '14px', color: '#999' }}>
                     {status === 'error' && (
                         <p>
-                            如果您持续遇到问题，请联系支持团队
+                            If you continue to encounter problems, please contact the support team
                         </p>
                     )}
                 </div>

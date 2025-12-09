@@ -46,6 +46,18 @@ const Results: React.FC = () => {
   const displayResult = apiResult || stateApiResult;
   const localResult = stateResult;
 
+  // Determine navigation: if coming from test (has stateResult), go to dashboard
+  // if coming from history (URL param only), go back
+  const isFromTest = !!stateResult;
+  const handleBack = () => {
+    if (isFromTest) {
+      navigate('/');
+    } else {
+      navigate(-1);
+    }
+  };
+  const backButtonText = isFromTest ? 'Back to Dashboard' : 'Go Back';
+
   // Calculate display values
   const avgReactionTime = displayResult
     ? displayResult.statistics.avgReactionTime
@@ -58,8 +70,19 @@ const Results: React.FC = () => {
   const hasDetailedData = !!displayResult;
 
   return (
-    <div id="view-result" style={{ maxWidth: '800px', margin: '0 auto' }}>
-      <div style={{ textAlign: 'center', paddingTop: '40px' }}>
+    <div id="view-result" style={{ maxWidth: '800px', margin: '0 auto', paddingTop: '20px' }}>
+      {/* Back Button - Top Right */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
+        <button
+          className="btn btn-outline"
+          onClick={handleBack}
+          style={{ minWidth: '150px' }}
+        >
+          {backButtonText}
+        </button>
+      </div>
+
+      <div style={{ textAlign: 'center' }}>
         <div style={{ fontSize: '80px' }}>🎉</div>
         <h1>Test Complete</h1>
 
@@ -170,10 +193,6 @@ const Results: React.FC = () => {
             )}
           </>
         )}
-
-        <button className="btn btn-primary" onClick={() => navigate('/')}>
-          Back to Dashboard
-        </button>
       </div>
     </div>
   );

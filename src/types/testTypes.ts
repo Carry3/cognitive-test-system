@@ -96,6 +96,59 @@ export interface LeaderboardEntry {
     testName?: string;
 }
 
+// Statistics Types
+export interface TestTypeCount {
+    testType: string;
+    testName: string;
+    count: number;
+}
+
+export interface GlobalStatistics {
+    totalUsers: number;
+    totalTests: number;
+    totalTestsToday: number;
+    testTypeCounts: TestTypeCount[];
+}
+
+export interface RankingEntry {
+    rank: number;
+    username: string;
+    testCount: number;
+    avgAccuracy: number | null;
+    avgReactionTime: number | null;
+}
+
+export interface CurrentUserRank {
+    rank: number;
+    testCount: number;
+}
+
+export interface LeaderboardResponse {
+    rankings: RankingEntry[];
+    totalUsers: number;
+    currentUser: CurrentUserRank | null;
+}
+
+export interface DistributionBucket {
+    range: string;
+    count: number;
+    percentage: number;
+}
+
+export interface TestTypeStatistics {
+    testType: string;
+    testName: string;
+    totalTests: number;
+    avgReactionTime: number;
+    minReactionTime: number;
+    maxReactionTime: number;
+    avgAccuracy: number;
+    minAccuracy: number;
+    maxAccuracy: number;
+    reactionTimeDistribution: DistributionBucket[];
+    accuracyDistribution: DistributionBucket[];
+}
+
 export interface UserStatistics {
     totalTestsCompleted: number;
     averageAccuracy: number;

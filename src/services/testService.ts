@@ -90,7 +90,7 @@ export const getTestHistory = async (testType?: string): Promise<import('../type
 export const getGlobalLeaderboard = async (limit: number = 100): Promise<import('../types/testTypes').LeaderboardEntry[]> => {
     try {
         const response = await apiClient.get<import('../types/testTypes').LeaderboardEntry[]>(
-            `/api/leaderboard/global?limit=${limit}`
+            `/api/statistics/global?limit=${limit}`
         );
         return response.data;
     } catch (error: any) {
@@ -108,7 +108,7 @@ export const getTestTypeLeaderboard = async (
 ): Promise<import('../types/testTypes').LeaderboardEntry[]> => {
     try {
         const response = await apiClient.get<import('../types/testTypes').LeaderboardEntry[]>(
-            `/api/leaderboard/test-type/${testType}?limit=${limit}`
+            `/api/statistics/leaderboard/test-type/${testType}?limit=${limit}`
         );
         return response.data;
     } catch (error: any) {
@@ -128,6 +128,51 @@ export const getUserStatistics = async (): Promise<import('../types/testTypes').
         return response.data;
     } catch (error: any) {
         console.error('Failed to fetch user statistics:', error);
+        throw error;
+    }
+};
+
+/**
+ * Get global statistics (total users, tests, etc.)
+ */
+export const getGlobalStatistics = async (): Promise<import('../types/testTypes').GlobalStatistics> => {
+    try {
+        const response = await apiClient.get<import('../types/testTypes').GlobalStatistics>(
+            '/api/statistics/global'
+        );
+        return response.data;
+    } catch (error: any) {
+        console.error('Failed to fetch global statistics:', error);
+        throw error;
+    }
+};
+
+/**
+ * Get leaderboard rankings
+ */
+export const getLeaderboard = async (limit: number = 10): Promise<import('../types/testTypes').LeaderboardResponse> => {
+    try {
+        const response = await apiClient.get<import('../types/testTypes').LeaderboardResponse>(
+            `/api/statistics/leaderboard?limit=${limit}`
+        );
+        return response.data;
+    } catch (error: any) {
+        console.error('Failed to fetch leaderboard:', error);
+        throw error;
+    }
+};
+
+/**
+ * Get test type statistics
+ */
+export const getTestTypeStatistics = async (testType: string): Promise<import('../types/testTypes').TestTypeStatistics> => {
+    try {
+        const response = await apiClient.get<import('../types/testTypes').TestTypeStatistics>(
+            `/api/statistics/test-type/${testType}`
+        );
+        return response.data;
+    } catch (error: any) {
+        console.error('Failed to fetch test type statistics:', error);
         throw error;
     }
 };
