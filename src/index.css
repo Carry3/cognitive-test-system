@@ -1,0 +1,383 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --duo-green: #58CC02;
+  --duo-green-shadow: #46A302;
+  --duo-red: #FF4B4B;
+  --duo-red-shadow: #D43636;
+  --duo-blue: #1CB0F6;
+  --duo-blue-shadow: #1899D6;
+  --duo-yellow: #FFC800;
+  --duo-yellow-shadow: #D4A300;
+  --bg-color: #FFFFFF;
+  --text-color: #3C3C3C;
+  --gray-border: #E5E5E5;
+  --gray-hover: #F7F7F7;
+  --sidebar-width: 250px;
+}
+
+body {
+  margin: 0;
+  font-family: 'Nunito', sans-serif;
+  color: var(--text-color);
+  background-color: #FCFCFC;
+  overflow-x: hidden;
+}
+
+.app-container {
+  display: flex;
+  min-height: 100vh;
+  transition: all 0.3s ease;
+}
+
+.sidebar {
+  width: var(--sidebar-width);
+  padding: 24px;
+  border-right: 2px solid var(--gray-border);
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  background: #fff;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s ease;
+}
+
+.main-content {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  padding: 40px 60px;
+  max-width: 1000px;
+  transition: margin-left 0.3s ease, padding 0.3s ease;
+}
+
+/* 游戏模式状态：隐藏侧边栏，居中内容 */
+body.game-mode .sidebar {
+  transform: translateX(-100%);
+}
+
+body.game-mode .main-content {
+  margin-left: 0;
+  padding: 20px;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+body.game-mode #view-game {
+  width: 100%;
+  max-width: 800px;
+}
+
+/* UI Components */
+.logo {
+  font-size: 26px;
+  font-weight: 900;
+  color: var(--duo-green);
+  margin-bottom: 40px;
+  text-decoration: none;
+  display: block;
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  margin-bottom: 8px;
+  border-radius: 16px;
+  cursor: pointer;
+  font-weight: 800;
+  color: #777;
+  transition: background 0.1s;
+  border: 2px solid transparent;
+}
+
+.nav-btn:hover {
+  background-color: var(--gray-hover);
+}
+
+.nav-btn.active {
+  color: var(--duo-blue);
+  background-color: #ddf4ff;
+  border-color: #84d8ff;
+}
+
+.btn {
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 800;
+  cursor: pointer;
+  color: white;
+  text-transform: uppercase;
+  transition: transform 0.1s;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
+  outline: none;
+}
+
+.btn:active {
+  transform: translateY(4px);
+  box-shadow: none !important;
+}
+
+.btn-primary {
+  background-color: var(--duo-green);
+  box-shadow: 0 4px 0 var(--duo-green-shadow);
+}
+
+.btn-blue {
+  background-color: var(--duo-blue);
+  box-shadow: 0 4px 0 var(--duo-blue-shadow);
+  width: 100%;
+}
+
+.btn-outline {
+  background: transparent;
+  color: #afafaf;
+  border: 2px solid #e5e5e5;
+  box-shadow: none;
+}
+
+/* Modals */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(5px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+.modal-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-card {
+  background: white;
+  border-radius: 20px;
+  padding: 30px;
+  width: 400px;
+  text-align: center;
+  transform: translateY(20px);
+  transition: transform 0.3s;
+}
+
+.modal-overlay.active .modal-card {
+  transform: translateY(0);
+}
+
+/* Game View */
+.hero-section {
+  background: var(--duo-blue);
+  color: white;
+  border-radius: 16px;
+  padding: 40px;
+  margin-bottom: 40px;
+  box-shadow: 0 6px 0 var(--duo-blue-shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+.test-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.test-card {
+  background: white;
+  border: 2px solid var(--gray-border);
+  border-radius: 16px;
+  padding: 24px;
+  cursor: pointer;
+  transition: top 0.1s;
+  position: relative;
+  top: 0;
+}
+
+.test-card:hover {
+  top: -4px;
+  border-color: var(--duo-blue);
+}
+
+.game-frame {
+  background: white;
+  border: 2px solid var(--gray-border);
+  border-radius: 20px;
+  height: 450px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 20px;
+  font-size: 64px;
+  font-weight: 900;
+  user-select: none;
+  position: relative;
+}
+
+.inst-desc {
+  background: #f5f5f5;
+  padding: 15px;
+  border-radius: 12px;
+  text-align: left;
+  margin-bottom: 20px;
+  font-size: 15px;
+  color: #555;
+  line-height: 1.6;
+}
+
+.key-badge {
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-weight: bold;
+  font-family: monospace;
+  font-size: 0.9em;
+  box-shadow: 0 2px 0 #ddd;
+}
+
+.hidden {
+  display: none !important;
+}
+/* --- Duolingo Style Button (Duo Button) --- */
+
+/* 基础按钮样式 */
+.duo-btn {
+  /* 重置默认按钮样式 */
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0;
+  
+  /* 基础 Duolingo 风格 */
+  display: block;
+  width: 100%;
+  position: relative;
+  
+  /* 外观 */
+  border-radius: 16px; /* 更大的圆角 */
+  text-transform: uppercase;
+  font-weight: 800;
+  font-size: 16px;
+  color: white; /* 默认文本颜色 */
+  
+  /* 动画效果 */
+  transition: transform 0.1s;
+  user-select: none;
+}
+
+/* 按钮点击/按下效果：上移 */
+.duo-btn:active:not(.duo-btn-disabled) {
+  transform: translateY(4px);
+}
+
+/* 按钮内容（用于内边距和颜色） */
+.duo-btn-content {
+  padding: 12px 20px;
+  border-radius: 16px;
+  /* 实际的背景色和阴影将通过特定颜色类设置 */
+  position: relative;
+  box-shadow: 0 6px 0 currentColor; /* 使用 currentColor 作为阴影颜色占位符 */
+  
+  /* 确保内容在阴影之上 */
+  z-index: 1;
+}
+
+/* 点击时的阴影消失效果 */
+.duo-btn:active .duo-btn-content:not(.duo-btn-disabled .duo-btn-content) {
+  box-shadow: none !important;
+  transform: translateY(4px);
+}
+
+/* 内部文本和快捷键 */
+.duo-btn-text {
+  /* 主文本样式 */
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800;
+  font-size: 16px;
+  color: white;
+}
+
+.duo-btn-key {
+  font-size: 14px;
+  margin-top: 5px;
+  opacity: 0.9;
+}
+/* --- 按钮颜色定义 --- */
+
+/* 蓝色按钮 (默认/Primary) */
+.duo-btn-blue .duo-btn-content {
+  background-color: var(--duo-blue);
+  box-shadow: 0 4px 0 var(--duo-blue-shadow);
+}
+
+.duo-btn-blue:active .duo-btn-content {
+  transform: translateY(4px);
+}
+
+/* 绿色按钮 (Correct) */
+.duo-btn-green .duo-btn-content {
+  background-color: var(--duo-green);
+  box-shadow: 0 4px 0 var(--duo-green-shadow);
+}
+
+.duo-btn-green:active .duo-btn-content {
+  transform: translateY(4px);
+}
+
+/* 红色按钮 (Incorrect) */
+.duo-btn-red .duo-btn-content {
+  background-color: var(--duo-red);
+  box-shadow: 0 4px 0 var(--duo-red-shadow);
+}
+
+.duo-btn-red:active .duo-btn-content {
+  transform: translateY(4px);
+}
+
+/* 黄色按钮 */
+.duo-btn-yellow .duo-btn-content {
+  background-color: var(--duo-yellow);
+  box-shadow: 0 4px 0 var(--duo-yellow-shadow);
+}
+
+.duo-btn-yellow:active .duo-btn-content {
+  transform: translateY(4px);
+}
+
+/* 禁用状态 */
+.duo-btn-disabled {
+  pointer-events: none; /* 禁用鼠标事件 */
+  opacity: 0.6;
+}
+
+.duo-btn-disabled .duo-btn-content {
+  background-color: #ccc !important; /* 统一的禁用背景色 */
+  box-shadow: 0 4px 0 #999 !important; /* 统一的禁用阴影 */
+  color: #fff !important;
+  transform: none !important;
+}
+
+.duo-btn-disabled:active .duo-btn-content {
+  transform: none !important;
+  box-shadow: 0 4px 0 #999 !important;
+}
